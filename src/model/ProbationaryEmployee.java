@@ -1,8 +1,10 @@
 package model;
 
+import java.time.LocalDate;
+
 // Another concrete class showing POLYMORPHISM
 public class ProbationaryEmployee extends Employee {
-    private static final double OVERTIME_RATE = 1.25;
+    private static final double OVERTIME_RATE = 1.15; // Reduced overtime rate
     private static final int STANDARD_WORKING_DAYS = 22;
     private LocalDate probationEndDate;
     
@@ -28,7 +30,7 @@ public class ProbationaryEmployee extends Employee {
         double dailyRate = basicSalary / STANDARD_WORKING_DAYS;
         double regularPay = dailyRate * daysWorked;
         // Probationary employees get reduced overtime rate
-        double overtimePay = (dailyRate / 8) * overtimeHours * (OVERTIME_RATE - 0.1); // 1.15 instead of 1.25
+        double overtimePay = (dailyRate / 8) * overtimeHours * OVERTIME_RATE;
         return regularPay + overtimePay;
     }
     
@@ -38,8 +40,8 @@ public class ProbationaryEmployee extends Employee {
         double sss = calculateSSS();
         double philHealth = calculatePhilHealth();
         double pagIbig = calculatePagIBIG();
-        // No withholding tax for probationary employees below certain threshold
-        double withholdingTax = basicSalary > 30000 ? calculateWithholdingTax() : 0;
+        // Reduced withholding tax for probationary employees
+        double withholdingTax = basicSalary > 30000 ? calculateWithholdingTax() * 0.8 : 0;
         return sss + philHealth + pagIbig + withholdingTax;
     }
     
