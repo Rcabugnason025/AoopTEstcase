@@ -4,7 +4,7 @@ echo  MOTORPH OOP TEST - SIMPLE VERSION
 echo ========================================
 
 echo Compiling SimpleTest.java...
-javac -cp ".;lib/*" SimpleTest.java
+javac -cp ".;lib/*;src" SimpleTest.java
 
 if %errorlevel% neq 0 (
     echo.
@@ -24,7 +24,7 @@ if %errorlevel% neq 0 (
 echo.
 echo Running the test...
 echo.
-java -cp ".;lib/*" SimpleTest
+java -cp ".;lib/*;src" SimpleTest
 
 echo.
 echo Test completed!

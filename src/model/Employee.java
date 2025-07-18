@@ -5,7 +5,7 @@ import java.time.LocalDateTime;
 import java.time.Period;
 
 // Abstract base class demonstrating ABSTRACTION
-public abstract class Employee extends BaseEntity {
+public abstract class Employee {
     // Protected fields for inheritance (ENCAPSULATION)
     protected int employeeId;
     protected String firstName;
@@ -27,15 +27,18 @@ public abstract class Employee extends BaseEntity {
     protected double grossSemiMonthlyRate;
     protected double hourlyRate;
     protected int positionId;
+    protected LocalDateTime createdAt;
+    protected LocalDateTime updatedAt;
 
     // Default constructor
     public Employee() {
-        super();
+        this.createdAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
     }
 
     // Constructor with basic information
     public Employee(int employeeId, String firstName, String lastName, String position, double basicSalary) {
-        super();
+        this();
         this.employeeId = employeeId;
         this.firstName = firstName;
         this.lastName = lastName;
@@ -89,6 +92,12 @@ public abstract class Employee extends BaseEntity {
     public int getEmployeeId() { return employeeId; }
     public void setEmployeeId(int employeeId) { 
         this.employeeId = employeeId; 
+        touch();
+    }
+
+    public int getId() { return employeeId; }
+    public void setId(int id) { 
+        this.employeeId = id; 
         touch();
     }
 
@@ -206,14 +215,26 @@ public abstract class Employee extends BaseEntity {
         touch();
     }
 
-    @Override
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public void setCreatedAt(LocalDateTime createdAt) { 
+        this.createdAt = createdAt; 
+    }
+
+    public LocalDateTime getUpdatedAt() { return updatedAt; }
+    public void setUpdatedAt(LocalDateTime updatedAt) { 
+        this.updatedAt = updatedAt; 
+    }
+
+    protected void touch() { 
+        this.updatedAt = LocalDateTime.now(); 
+    }
+
     public boolean isValid() {
         return employeeId > 0 && 
                firstName != null && !firstName.trim().isEmpty() &&
                lastName != null && !lastName.trim().isEmpty();
     }
 
-    @Override
     public String getDisplayName() {
         return getFullName() + " (" + employeeId + ")";
     }
