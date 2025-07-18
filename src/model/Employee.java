@@ -19,6 +19,7 @@ public abstract class Employee {
     protected String pagibigNumber;
     protected String status;
     protected String position;
+    protected String department;
     protected String immediateSupervisor;
     protected double basicSalary;
     protected double riceSubsidy;
@@ -86,6 +87,23 @@ public abstract class Employee {
 
     public double getCalculatedHourlyRate() {
         return getDailyRate() / 8.0; // 8 hours per day
+    }
+
+    // Attendance utility methods
+    public boolean isFullDay() {
+        return true; // Default implementation
+    }
+
+    public boolean isLate() {
+        return false; // Default implementation
+    }
+
+    public boolean hasUndertime() {
+        return false; // Default implementation
+    }
+
+    public double getWorkHours() {
+        return 8.0; // Default implementation
     }
 
     // Getters and setters with proper encapsulation
@@ -164,6 +182,12 @@ public abstract class Employee {
     public String getPosition() { return position; }
     public void setPosition(String position) { 
         this.position = position; 
+        touch();
+    }
+
+    public String getDepartment() { return department; }
+    public void setDepartment(String department) { 
+        this.department = department; 
         touch();
     }
 

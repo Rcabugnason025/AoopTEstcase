@@ -11,6 +11,13 @@ public class ProbationaryEmployee extends Employee {
     // Default constructor
     public ProbationaryEmployee() {
         super();
+        this.status = "Probationary";
+        // Reduced allowances for probationary employees
+        this.riceSubsidy = 1000.0;
+        this.phoneAllowance = 1000.0;
+        this.clothingAllowance = 500.0;
+        // Set probation end date (6 months from now)
+        this.probationEndDate = LocalDate.now().plusMonths(6);
     }
     
     // Constructor with parameters

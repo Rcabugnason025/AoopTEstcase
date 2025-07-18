@@ -8,6 +8,11 @@ public class RegularEmployee extends Employee {
     // Default constructor
     public RegularEmployee() {
         super();
+        this.status = "Regular";
+        // Set default allowances for regular employees
+        this.riceSubsidy = 1500.0;
+        this.phoneAllowance = 2000.0;
+        this.clothingAllowance = 1000.0;
     }
     
     // Constructor with parameters
