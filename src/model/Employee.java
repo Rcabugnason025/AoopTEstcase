@@ -4,7 +4,10 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.Period;
 
-// Abstract base class demonstrating ABSTRACTION
+/**
+ * Abstract Employee class demonstrating OOP principles
+ * Addresses mentor feedback on inheritance, polymorphism, abstraction, and encapsulation
+ */
 public abstract class Employee {
     // Protected fields for inheritance (ENCAPSULATION)
     protected int employeeId;
@@ -19,25 +22,20 @@ public abstract class Employee {
     protected String pagibigNumber;
     protected String status;
     protected String position;
-    protected String department;
     protected String immediateSupervisor;
     protected double basicSalary;
     protected double riceSubsidy;
     protected double phoneAllowance;
     protected double clothingAllowance;
-    protected double grossSemiMonthlyRate;
-    protected double hourlyRate;
-    protected int positionId;
     protected LocalDateTime createdAt;
     protected LocalDateTime updatedAt;
 
-    // Default constructor
+    // Constructor
     public Employee() {
         this.createdAt = LocalDateTime.now();
         this.updatedAt = LocalDateTime.now();
     }
 
-    // Constructor with basic information
     public Employee(int employeeId, String firstName, String lastName, String position, double basicSalary) {
         this();
         this.employeeId = employeeId;
@@ -79,31 +77,6 @@ public abstract class Employee {
 
     public double getTotalAllowances() {
         return riceSubsidy + phoneAllowance + clothingAllowance;
-    }
-
-    public double getDailyRate() {
-        return basicSalary / 22.0; // 22 working days per month
-    }
-
-    public double getCalculatedHourlyRate() {
-        return getDailyRate() / 8.0; // 8 hours per day
-    }
-
-    // Attendance utility methods
-    public boolean isFullDay() {
-        return true; // Default implementation
-    }
-
-    public boolean isLate() {
-        return false; // Default implementation
-    }
-
-    public boolean hasUndertime() {
-        return false; // Default implementation
-    }
-
-    public double getWorkHours() {
-        return 8.0; // Default implementation
     }
 
     // Getters and setters with proper encapsulation
@@ -185,12 +158,6 @@ public abstract class Employee {
         touch();
     }
 
-    public String getDepartment() { return department; }
-    public void setDepartment(String department) { 
-        this.department = department; 
-        touch();
-    }
-
     public String getImmediateSupervisor() { return immediateSupervisor; }
     public void setImmediateSupervisor(String immediateSupervisor) { 
         this.immediateSupervisor = immediateSupervisor; 
@@ -221,24 +188,6 @@ public abstract class Employee {
         touch();
     }
 
-    public double getGrossSemiMonthlyRate() { return grossSemiMonthlyRate; }
-    public void setGrossSemiMonthlyRate(double grossSemiMonthlyRate) { 
-        this.grossSemiMonthlyRate = grossSemiMonthlyRate; 
-        touch();
-    }
-
-    public double getHourlyRate() { return hourlyRate; }
-    public void setHourlyRate(double hourlyRate) { 
-        this.hourlyRate = hourlyRate; 
-        touch();
-    }
-
-    public int getPositionId() { return positionId; }
-    public void setPositionId(int positionId) { 
-        this.positionId = positionId; 
-        touch();
-    }
-
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { 
         this.createdAt = createdAt; 
@@ -257,10 +206,6 @@ public abstract class Employee {
         return employeeId > 0 && 
                firstName != null && !firstName.trim().isEmpty() &&
                lastName != null && !lastName.trim().isEmpty();
-    }
-
-    public String getDisplayName() {
-        return getFullName() + " (" + employeeId + ")";
     }
 
     @Override

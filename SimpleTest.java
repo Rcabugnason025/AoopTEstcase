@@ -1,7 +1,7 @@
 // Simple test to verify OOP implementation works
 // Put this file in your main project folder (same level as src folder)
 
-import model.*;
+import src.model.*;
 
 public class SimpleTest {
     public static void main(String[] args) {

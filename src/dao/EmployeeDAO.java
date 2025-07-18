@@ -267,7 +267,7 @@ public class EmployeeDAO {
         double basicSalary = rs.getDouble("basic_salary");
 
         // Use Factory pattern to create appropriate employee type (POLYMORPHISM)
-        Employee e = EmployeeFactory.createEmployeeFromStatus(status, employeeId, firstName, lastName, position, basicSalary);
+        Employee e = model.EmployeeFactory.createEmployeeFromStatus(status, employeeId, firstName, lastName, position, basicSalary);
 
         e.setId(rs.getInt("employee_id"));
         e.setLastName(rs.getString("last_name"));

@@ -2,13 +2,15 @@ package model;
 
 import java.time.LocalDate;
 
-// Another concrete class showing POLYMORPHISM
+/**
+ * Probationary Employee implementation demonstrating POLYMORPHISM
+ * Different behavior from RegularEmployee - addresses mentor feedback
+ */
 public class ProbationaryEmployee extends Employee {
     private static final double OVERTIME_RATE = 1.15; // Reduced overtime rate
     private static final int STANDARD_WORKING_DAYS = 22;
     private LocalDate probationEndDate;
     
-    // Default constructor
     public ProbationaryEmployee() {
         super();
         this.status = "Probationary";
@@ -16,11 +18,9 @@ public class ProbationaryEmployee extends Employee {
         this.riceSubsidy = 1000.0;
         this.phoneAllowance = 1000.0;
         this.clothingAllowance = 500.0;
-        // Set probation end date (6 months from now)
         this.probationEndDate = LocalDate.now().plusMonths(6);
     }
     
-    // Constructor with parameters
     public ProbationaryEmployee(int employeeId, String firstName, String lastName, String position, double basicSalary) {
         super(employeeId, firstName, lastName, position, basicSalary);
         this.status = "Probationary";
@@ -28,7 +28,6 @@ public class ProbationaryEmployee extends Employee {
         this.riceSubsidy = 1000.0;
         this.phoneAllowance = 1000.0;
         this.clothingAllowance = 500.0;
-        // Set probation end date (6 months from now)
         this.probationEndDate = LocalDate.now().plusMonths(6);
     }
     

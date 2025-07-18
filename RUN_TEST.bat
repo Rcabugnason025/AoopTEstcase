@@ -1,6 +1,6 @@
 @echo off
 echo ========================================
-echo  MOTORPH OOP TEST - SIMPLE VERSION
+echo  MOTORPH OOP TEST - CLEAN VERSION
 echo ========================================
 
 echo Compiling SimpleTest.java...
