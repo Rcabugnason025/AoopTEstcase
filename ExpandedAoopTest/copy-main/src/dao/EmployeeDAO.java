@@ -2,7 +2,6 @@ package dao;
 
 import util.DBConnection;
 import model.Employee;
-import model.EmployeeFactory;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -22,14 +21,14 @@ public class EmployeeDAO {
 
     public List<Employee> getAllEmployees() {
         List<Employee> employees = new ArrayList<>();
-        String query = "SELECT * FROM v_employee_details ORDER BY last_name, first_name";
+        String query = "SELECT * FROM employees ORDER BY last_name, first_name";
 
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(query);
              ResultSet rs = stmt.executeQuery()) {
 
             while (rs.next()) {
-                Employee e = mapViewResultSetToEmployee(rs);
+                Employee e = mapResultSetToEmployee(rs);
                 employees.add(e);
             }
 
@@ -42,6 +41,32 @@ public class EmployeeDAO {
     }
 
     public Employee getEmployeeById(int employeeId) {
+        String query = "SELECT * FROM employees WHERE employee_id = ?";
+
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(query)) {
+
+            stmt.setInt(1, employeeId);
+            ResultSet rs = stmt.executeQuery();
+
+            if (rs.next()) {
+                return mapResultSetToEmployee(rs);
+            }
+
+        } catch (SQLException ex) {
+            LOGGER.log(Level.SEVERE, "Error fetching employee with ID: " + employeeId, ex);
+            throw new RuntimeException("Failed to fetch employee", ex);
+        }
+
+        return null;
+    }
+
+    /**
+     * Get employee with position details using the view
+	 * @param employeeId
+	 * @return 
+     */
+    public Employee getEmployeeWithPositionDetails(int employeeId) {
         String query = "SELECT * FROM v_employee_details WHERE employee_id = ?";
 
         try (Connection conn = DBConnection.getConnection();
@@ -55,22 +80,17 @@ public class EmployeeDAO {
             }
 
         } catch (SQLException ex) {
-            LOGGER.log(Level.SEVERE, "Error fetching employee with ID: " + employeeId, ex);
-            throw new RuntimeException("Failed to fetch employee", ex);
+            LOGGER.log(Level.SEVERE, "Error fetching employee details with ID: " + employeeId, ex);
+            throw new RuntimeException("Failed to fetch employee details", ex);
         }
 
         return null;
     }
 
     /**
-     * Get employee with position details using the view
-     */
-    public Employee getEmployeeWithPositionDetails(int employeeId) {
-        return getEmployeeById(employeeId); // Now uses the view by default
-    }
-
-    /**
-     * Enhanced insertEmployee method using stored procedure
+     * Enhanced insertEmployee method matching the actual database schema
+	 * @param e
+	 * @return 
      */
     public boolean insertEmployee(Employee e) {
         if (e == null) {
@@ -78,7 +98,7 @@ public class EmployeeDAO {
         }
 
         // Validate required fields
-        if (e.getEmployeeId() <= 0) {
+        if (e.getId() <= 0) {
             throw new IllegalArgumentException("Employee ID must be positive");
         }
         if (e.getFirstName() == null || e.getFirstName().trim().isEmpty()) {
@@ -88,13 +108,38 @@ public class EmployeeDAO {
             throw new IllegalArgumentException("Last name is required");
         }
 
-        // Use stored procedure for safe insertion
-        String sql = "CALL sp_add_new_employee(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        // Validate status enum
+        if (e.getStatus() != null && !e.getStatus().trim().isEmpty()) {
+            String status = e.getStatus().trim();
+            if (!status.equals("Regular") && !status.equals("Probationary")) {
+                throw new IllegalArgumentException("Status must be either 'Regular' or 'Probationary'");
+            }
+        }
+
+        // Check for duplicate employee ID
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement checkStmt = conn.prepareStatement("SELECT 1 FROM employees WHERE employee_id = ?")) {
+
+            checkStmt.setInt(1, e.getId());
+            try (ResultSet rs = checkStmt.executeQuery()) {
+                if (rs.next()) {
+                    throw new IllegalArgumentException("Employee ID " + e.getId() + " already exists");
+                }
+            }
+        } catch (SQLException ex) {
+            LOGGER.log(Level.SEVERE, "Error checking for duplicate employee ID: " + e.getId(), ex);
+            throw new RuntimeException("Error checking for duplicate employee ID: " + ex.getMessage(), ex);
+        }
+
+        // SQL matching actual database schema
+        String sql = "INSERT INTO employees (employee_id, last_name, first_name, birthday, address, " +
+                "phone_number, sss_number, philhealth_number, tin_number, pagibig_number, " +
+                "status, position_id, supervisor_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
 
-            stmt.setInt(1, e.getEmployeeId());
+            stmt.setInt(1, e.getId());
             stmt.setString(2, e.getLastName() != null ? e.getLastName().trim() : null);
             stmt.setString(3, e.getFirstName() != null ? e.getFirstName().trim() : null);
             stmt.setDate(4, e.getBirthday() != null ? java.sql.Date.valueOf(e.getBirthday()) : null);
@@ -105,16 +150,26 @@ public class EmployeeDAO {
             stmt.setString(9, e.getTinNumber() != null ? e.getTinNumber().trim() : null);
             stmt.setString(10, e.getPagibigNumber() != null ? e.getPagibigNumber().trim() : null);
             stmt.setString(11, e.getStatus() != null ? e.getStatus().trim() : "Regular");
-            stmt.setInt(12, e.getPositionId() > 0 ? e.getPositionId() : 1); // Default position
-            stmt.setObject(13, getSupervisorId(e.getImmediateSupervisor()), java.sql.Types.INTEGER);
-            stmt.setString(14, "password1234"); // Default password
 
-            stmt.executeUpdate();
-            LOGGER.info("Successfully inserted employee: " + e.getEmployeeId() + " - " + e.getFullName());
-            return true;
+            // For position_id, we need to get this from the position string or set a default
+            // This assumes you have a way to map position names to IDs
+            stmt.setInt(12, getPositionId(e.getPosition()));
+
+            // For supervisor_id, we need to convert supervisor name to ID or set null
+            stmt.setObject(13, getSupervisorId(e.getImmediateSupervisor()), java.sql.Types.INTEGER);
+
+            int result = stmt.executeUpdate();
+
+            if (result > 0) {
+                LOGGER.info("Successfully inserted employee: " + e.getId() + " - " + e.getFullName());
+                return true;
+            } else {
+                LOGGER.warning("No rows affected when inserting employee: " + e.getId());
+                return false;
+            }
 
         } catch (SQLException ex) {
-            LOGGER.log(Level.SEVERE, "Error inserting employee: " + e.getEmployeeId(), ex);
+            LOGGER.log(Level.SEVERE, "Error inserting employee: " + e.getId(), ex);
             throw new RuntimeException("Failed to insert employee: " + ex.getMessage(), ex);
         }
     }
@@ -123,7 +178,7 @@ public class EmployeeDAO {
         if (e == null) {
             throw new IllegalArgumentException("Employee cannot be null");
         }
-        if (e.getEmployeeId() <= 0) {
+        if (e.getId() <= 0) {
             throw new IllegalArgumentException("Employee ID must be positive");
         }
 
@@ -144,22 +199,22 @@ public class EmployeeDAO {
             stmt.setString(8, e.getTinNumber() != null ? e.getTinNumber().trim() : null);
             stmt.setString(9, e.getPagibigNumber() != null ? e.getPagibigNumber().trim() : null);
             stmt.setString(10, e.getStatus() != null ? e.getStatus().trim() : "Regular");
-            stmt.setInt(11, e.getPositionId() > 0 ? e.getPositionId() : 1);
+            stmt.setInt(11, getPositionId(e.getPosition()));
             stmt.setObject(12, getSupervisorId(e.getImmediateSupervisor()), java.sql.Types.INTEGER);
-            stmt.setInt(13, e.getEmployeeId());
+            stmt.setInt(13, e.getId());
 
             int result = stmt.executeUpdate();
 
             if (result > 0) {
-                LOGGER.info("Successfully updated employee: " + e.getEmployeeId() + " - " + e.getFullName());
+                LOGGER.info("Successfully updated employee: " + e.getId() + " - " + e.getFullName());
                 return true;
             } else {
-                LOGGER.warning("No employee found with ID: " + e.getEmployeeId() + " for update");
+                LOGGER.warning("No employee found with ID: " + e.getId() + " for update");
                 return false;
             }
 
         } catch (SQLException ex) {
-            LOGGER.log(Level.SEVERE, "Error updating employee with ID: " + e.getEmployeeId(), ex);
+            LOGGER.log(Level.SEVERE, "Error updating employee with ID: " + e.getId(), ex);
             throw new RuntimeException("Failed to update employee: " + ex.getMessage(), ex);
         }
     }
@@ -197,7 +252,7 @@ public class EmployeeDAO {
         }
 
         List<Employee> employees = new ArrayList<>();
-        String query = "SELECT * FROM v_employee_details WHERE status = ? ORDER BY last_name, first_name";
+        String query = "SELECT * FROM employees WHERE status = ? ORDER BY last_name, first_name";
 
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(query)) {
@@ -206,7 +261,7 @@ public class EmployeeDAO {
             ResultSet rs = stmt.executeQuery();
 
             while (rs.next()) {
-                Employee e = mapViewResultSetToEmployee(rs);
+                Employee e = mapResultSetToEmployee(rs);
                 employees.add(e);
             }
 
@@ -218,58 +273,61 @@ public class EmployeeDAO {
         return employees;
     }
 
-    public List<Employee> searchEmployees(String searchTerm) {
-        if (searchTerm == null || searchTerm.trim().isEmpty()) {
-            return getAllEmployees();
-        }
-
+    public List<Employee> getEmployeesByPositionId(int positionId) {
         List<Employee> employees = new ArrayList<>();
-        String query = "SELECT * FROM v_employee_details WHERE " +
-                "employee_id LIKE ? OR " +
-                "CONCAT(first_name, ' ', last_name) LIKE ? OR " +
-                "position_title LIKE ? OR " +
-                "status LIKE ? " +
-                "ORDER BY last_name, first_name";
+        String query = "SELECT * FROM employees WHERE position_id = ? ORDER BY last_name, first_name";
 
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(query)) {
 
-            String searchPattern = "%" + searchTerm.trim() + "%";
-            stmt.setString(1, searchPattern);
-            stmt.setString(2, searchPattern);
-            stmt.setString(3, searchPattern);
-            stmt.setString(4, searchPattern);
-
+            stmt.setInt(1, positionId);
             ResultSet rs = stmt.executeQuery();
 
             while (rs.next()) {
-                Employee e = mapViewResultSetToEmployee(rs);
+                Employee e = mapResultSetToEmployee(rs);
                 employees.add(e);
             }
 
         } catch (SQLException ex) {
-            LOGGER.log(Level.SEVERE, "Error searching employees with term: " + searchTerm, ex);
-            throw new RuntimeException("Failed to search employees", ex);
+            LOGGER.log(Level.SEVERE, "Error fetching employees by position ID: " + positionId, ex);
+            throw new RuntimeException("Failed to fetch employees by position", ex);
+        }
+
+        return employees;
+    }
+
+    public List<Employee> getEmployeesBySupervisor(int supervisorId) {
+        List<Employee> employees = new ArrayList<>();
+        String query = "SELECT * FROM employees WHERE supervisor_id = ? ORDER BY last_name, first_name";
+
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(query)) {
+
+            stmt.setInt(1, supervisorId);
+            ResultSet rs = stmt.executeQuery();
+
+            while (rs.next()) {
+                Employee e = mapResultSetToEmployee(rs);
+                employees.add(e);
+            }
+
+        } catch (SQLException ex) {
+            LOGGER.log(Level.SEVERE, "Error fetching employees by supervisor ID: " + supervisorId, ex);
+            throw new RuntimeException("Failed to fetch employees by supervisor", ex);
         }
 
         return employees;
     }
 
     /**
-     * Map view result set to Employee with position details using Factory pattern
+     * Enhanced mapResultSetToEmployee matching actual database schema
      */
-    private Employee mapViewResultSetToEmployee(ResultSet rs) throws SQLException {
-        String status = rs.getString("status");
-        int employeeId = rs.getInt("employee_id");
-        String firstName = rs.getString("first_name");
-        String lastName = rs.getString("last_name");
-        String position = rs.getString("position_title");
-        double basicSalary = rs.getDouble("basic_salary");
+    private Employee mapResultSetToEmployee(ResultSet rs) throws SQLException {
+        Employee e = new Employee() {};
+        e.setId(rs.getInt("employee_id"));
+        e.setLastName(rs.getString("last_name"));
+        e.setFirstName(rs.getString("first_name"));
 
-        // Use Factory pattern to create appropriate employee type (POLYMORPHISM)
-        Employee e = EmployeeFactory.createEmployeeFromStatus(status, employeeId, firstName, lastName, position, basicSalary);
-
-        // Set additional properties
         java.sql.Date birthday = rs.getDate("birthday");
         if (birthday != null) {
             e.setBirthday(birthday.toLocalDate());
@@ -281,16 +339,120 @@ public class EmployeeDAO {
         e.setPhilhealthNumber(rs.getString("philhealth_number"));
         e.setTinNumber(rs.getString("tin_number"));
         e.setPagibigNumber(rs.getString("pagibig_number"));
-        e.setImmediateSupervisor(rs.getString("supervisor_name"));
+        e.setStatus(rs.getString("status"));
 
-        // Set allowances from position
-        e.setRiceSubsidy(rs.getDouble("rice_subsidy"));
-        e.setPhoneAllowance(rs.getDouble("phone_allowance"));
-        e.setClothingAllowance(rs.getDouble("clothing_allowance"));
-        e.setGrossSemiMonthlyRate(rs.getDouble("gross_semi_monthly_rate"));
-        e.setHourlyRate(rs.getDouble("hourly_rate"));
+        // Get position name from position_id
+        int positionId = rs.getInt("position_id");
+        e.setPosition(getPositionName(positionId));
+
+        // Get supervisor name from supervisor_id
+        Integer supervisorId = rs.getObject("supervisor_id", Integer.class);
+        if (supervisorId != null) {
+            e.setImmediateSupervisor(getSupervisorName(supervisorId));
+        }
+
+        // Handle timestamps
+        Timestamp created = rs.getTimestamp("created_at");
+        if (created != null) {
+            e.setCreatedAt(created.toLocalDateTime());
+        }
+        Timestamp updated = rs.getTimestamp("updated_at");
+        if (updated != null) {
+            e.setUpdatedAt(updated.toLocalDateTime());
+        }
 
         return e;
+    }
+
+    /**
+     * Map view result set to Employee with position details
+     */
+    private Employee mapViewResultSetToEmployee(ResultSet rs) throws SQLException {
+        Employee e = new Employee() {
+		@Override
+		public double calculateGrossPay(int daysWorked, double overtimeHours) {
+			throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+		}
+
+		@Override
+		public double calculateDeductions() {
+			throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+		}
+
+		@Override
+		public double calculateAllowances() {
+			throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+		}
+
+		@Override
+		public boolean isEligibleForBenefits() {
+			throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+		}
+	};
+        e.setId(rs.getInt("employee_id"));
+        e.setLastName(rs.getString("last_name"));
+        e.setFirstName(rs.getString("first_name"));
+
+        java.sql.Date birthday = rs.getDate("birthday");
+        if (birthday != null) {
+            e.setBirthday(birthday.toLocalDate());
+        }
+
+        e.setAddress(rs.getString("address"));
+        e.setPhoneNumber(rs.getString("phone_number"));
+        e.setSssNumber(rs.getString("sss_number"));
+        e.setPhilhealthNumber(rs.getString("philhealth_number"));
+        e.setTinNumber(rs.getString("tin_number"));
+        e.setPagibigNumber(rs.getString("pagibig_number"));
+        e.setStatus(rs.getString("status"));
+        e.setPosition(rs.getString("position_title"));
+        e.setImmediateSupervisor(rs.getString("supervisor_name"));
+
+        // Set basic salary from position
+        e.setBasicSalary(rs.getDouble("basic_salary"));
+
+        return e;
+    }
+
+    // Helper methods to convert between position names and IDs
+    private int getPositionId(String positionName) {
+        if (positionName == null) return 1; // Default position
+
+        String query = "SELECT position_id FROM positions WHERE position_title = ?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(query)) {
+
+            stmt.setString(1, positionName);
+            ResultSet rs = stmt.executeQuery();
+
+            if (rs.next()) {
+                return rs.getInt("position_id");
+            }
+
+        } catch (SQLException ex) {
+            LOGGER.log(Level.WARNING, "Error getting position ID for: " + positionName, ex);
+        }
+
+        return 1; // Default position ID if not found
+    }
+
+    private String getPositionName(int positionId) {
+        String query = "SELECT position_title FROM positions WHERE position_id = ?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(query)) {
+
+            stmt.setInt(1, positionId);
+            ResultSet rs = stmt.executeQuery();
+
+            if (rs.next()) {
+                return rs.getString("position_title");
+            }
+
+        } catch (SQLException ex) {
+            LOGGER.log(Level.WARNING, "Error getting position name for ID: " + positionId, ex);
+        }
+
+        return "Unknown Position";
     }
 
     private Integer getSupervisorId(String supervisorName) {
@@ -316,8 +478,29 @@ public class EmployeeDAO {
         return null;
     }
 
+    private String getSupervisorName(int supervisorId) {
+        String query = "SELECT CONCAT(last_name, ', ', first_name) as full_name FROM employees WHERE employee_id = ?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(query)) {
+
+            stmt.setInt(1, supervisorId);
+            ResultSet rs = stmt.executeQuery();
+
+            if (rs.next()) {
+                return rs.getString("full_name");
+            }
+
+        } catch (SQLException ex) {
+            LOGGER.log(Level.WARNING, "Error getting supervisor name for ID: " + supervisorId, ex);
+        }
+
+        return "Unknown Supervisor";
+    }
+
     /**
      * Utility method to check if an employee exists
+	 * @param employeeId
+	 * @return 
      */
     public boolean employeeExists(int employeeId) {
         if (employeeId <= 0) {

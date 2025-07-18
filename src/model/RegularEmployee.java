@@ -1,22 +1,16 @@
 package model;
 
-/**
- * Regular Employee implementation demonstrating INHERITANCE and POLYMORPHISM
- * Addresses mentor feedback on OOP principles
- */
+// Concrete class demonstrating INHERITANCE and POLYMORPHISM
 public class RegularEmployee extends Employee {
     private static final double OVERTIME_RATE = 1.25;
     private static final int STANDARD_WORKING_DAYS = 22;
     
+    // Default constructor
     public RegularEmployee() {
         super();
-        this.status = "Regular";
-        // Set default allowances for regular employees
-        this.riceSubsidy = 1500.0;
-        this.phoneAllowance = 2000.0;
-        this.clothingAllowance = 1000.0;
     }
     
+    // Constructor with parameters
     public RegularEmployee(int employeeId, String firstName, String lastName, String position, double basicSalary) {
         super(employeeId, firstName, lastName, position, basicSalary);
         this.status = "Regular";
@@ -60,21 +54,25 @@ public class RegularEmployee extends Employee {
     
     // Private helper methods for calculations
     private double calculateSSS() {
+        // SSS contribution table implementation
         if (basicSalary <= 3250) return 135.0;
         if (basicSalary <= 25000) return basicSalary * 0.045;
         return 1125.0; // Maximum SSS
     }
     
     private double calculatePhilHealth() {
+        // PhilHealth contribution: 2.5% of salary, max 1800
         return Math.min(basicSalary * 0.025, 1800.0);
     }
     
     private double calculatePagIBIG() {
+        // Pag-IBIG contribution
         if (basicSalary <= 1500) return basicSalary * 0.01;
-        return Math.min(basicSalary * 0.02, 100.0);
+        return Math.min(basicSalary * 0.02, 100.0); // 2% of salary, max 100
     }
     
     private double calculateWithholdingTax() {
+        // Philippine TRAIN law tax calculation
         double annualSalary = basicSalary * 12;
         if (annualSalary <= 250000) return 0;
         if (annualSalary <= 400000) return (annualSalary - 250000) * 0.15 / 12;

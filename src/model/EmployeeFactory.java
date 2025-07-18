@@ -1,13 +1,11 @@
 package model;
 
-/**
- * Factory pattern for creating employees - addresses mentor feedback on design patterns
- * Demonstrates POLYMORPHISM - returns different concrete types as Employee
- */
+// Factory pattern for creating employees (DESIGN PATTERN)
 public class EmployeeFactory {
     
     /**
      * Creates an employee based on the type specified
+     * Demonstrates POLYMORPHISM - returns different concrete types as Employee
      */
     public static Employee createEmployee(String employeeType, int employeeId, 
                                         String firstName, String lastName, String position, 
@@ -37,6 +35,15 @@ public class EmployeeFactory {
         } else {
             return new RegularEmployee(employeeId, firstName, lastName, position, basicSalary);
         }
+    }
+    
+    /**
+     * Polymorphic method demonstrating runtime behavior
+     */
+    public static void printEmployeeDetails(Employee employee) {
+        System.out.println("Employee Type: " + employee.getEmployeeType());
+        System.out.println("Benefits Eligible: " + employee.isEligibleForBenefits());
+        System.out.println("Net Pay (22 days, 0 OT): " + employee.calculateNetPay(22, 0));
     }
     
     /**

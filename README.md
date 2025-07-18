@@ -14,7 +14,7 @@
 
 ## 📋 Project Overview
 
-The MotorPH Payroll System is a comprehensive Java-based desktop application designed to manage employee payroll, attendance, and HR operations for MotorPH company. The system demonstrates advanced Object-Oriented Programming principles including proper inheritance, polymorphism, abstraction, and encapsulation.
+The MotorPH Payroll System is a comprehensive Java-based desktop application designed to manage employee payroll, attendance, and HR operations for MotorPH company. The system demonstrates advanced Object-Oriented Programming principles and has been enhanced based on mentor feedback to include proper inheritance, polymorphism, abstraction, and encapsulation.
 
 ### 🎯 Key Features
 

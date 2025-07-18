@@ -4,11 +4,8 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.Period;
 
-/**
- * Abstract Employee class demonstrating OOP principles
- * Addresses mentor feedback on inheritance, polymorphism, abstraction, and encapsulation
- */
-public abstract class Employee {
+// Abstract base class demonstrating ABSTRACTION
+public abstract class Employee extends BaseEntity {
     // Protected fields for inheritance (ENCAPSULATION)
     protected int employeeId;
     protected String firstName;
@@ -27,17 +24,18 @@ public abstract class Employee {
     protected double riceSubsidy;
     protected double phoneAllowance;
     protected double clothingAllowance;
-    protected LocalDateTime createdAt;
-    protected LocalDateTime updatedAt;
+    protected double grossSemiMonthlyRate;
+    protected double hourlyRate;
+    protected int positionId;
 
-    // Constructor
+    // Default constructor
     public Employee() {
-        this.createdAt = LocalDateTime.now();
-        this.updatedAt = LocalDateTime.now();
+        super();
     }
 
+    // Constructor with basic information
     public Employee(int employeeId, String firstName, String lastName, String position, double basicSalary) {
-        this();
+        super();
         this.employeeId = employeeId;
         this.firstName = firstName;
         this.lastName = lastName;
@@ -79,16 +77,18 @@ public abstract class Employee {
         return riceSubsidy + phoneAllowance + clothingAllowance;
     }
 
+    public double getDailyRate() {
+        return basicSalary / 22.0; // 22 working days per month
+    }
+
+    public double getCalculatedHourlyRate() {
+        return getDailyRate() / 8.0; // 8 hours per day
+    }
+
     // Getters and setters with proper encapsulation
     public int getEmployeeId() { return employeeId; }
     public void setEmployeeId(int employeeId) { 
         this.employeeId = employeeId; 
-        touch();
-    }
-
-    public int getId() { return employeeId; }
-    public void setId(int id) { 
-        this.employeeId = id; 
         touch();
     }
 
@@ -188,24 +188,34 @@ public abstract class Employee {
         touch();
     }
 
-    public LocalDateTime getCreatedAt() { return createdAt; }
-    public void setCreatedAt(LocalDateTime createdAt) { 
-        this.createdAt = createdAt; 
+    public double getGrossSemiMonthlyRate() { return grossSemiMonthlyRate; }
+    public void setGrossSemiMonthlyRate(double grossSemiMonthlyRate) { 
+        this.grossSemiMonthlyRate = grossSemiMonthlyRate; 
+        touch();
     }
 
-    public LocalDateTime getUpdatedAt() { return updatedAt; }
-    public void setUpdatedAt(LocalDateTime updatedAt) { 
-        this.updatedAt = updatedAt; 
+    public double getHourlyRate() { return hourlyRate; }
+    public void setHourlyRate(double hourlyRate) { 
+        this.hourlyRate = hourlyRate; 
+        touch();
     }
 
-    protected void touch() { 
-        this.updatedAt = LocalDateTime.now(); 
+    public int getPositionId() { return positionId; }
+    public void setPositionId(int positionId) { 
+        this.positionId = positionId; 
+        touch();
     }
 
+    @Override
     public boolean isValid() {
         return employeeId > 0 && 
                firstName != null && !firstName.trim().isEmpty() &&
                lastName != null && !lastName.trim().isEmpty();
+    }
+
+    @Override
+    public String getDisplayName() {
+        return getFullName() + " (" + employeeId + ")";
     }
 
     @Override
