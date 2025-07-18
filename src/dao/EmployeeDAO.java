@@ -267,12 +267,11 @@ public class EmployeeDAO {
         double basicSalary = rs.getDouble("basic_salary");
 
         // Use Factory pattern to create appropriate employee type (POLYMORPHISM)
-        Employee e;
-        if ("Probationary".equalsIgnoreCase(status)) {
-            e = new ProbationaryEmployee(employeeId, firstName, lastName, position, basicSalary);
-        } else {
-            e = new RegularEmployee(employeeId, firstName, lastName, position, basicSalary);
-        }
+        Employee e = EmployeeFactory.createEmployeeFromStatus(status, employeeId, firstName, lastName, position, basicSalary);
+
+        e.setId(rs.getInt("employee_id"));
+        e.setLastName(rs.getString("last_name"));
+        e.setFirstName(rs.getString("first_name"));
 
         // Set additional properties
         java.sql.Date birthday = rs.getDate("birthday");
